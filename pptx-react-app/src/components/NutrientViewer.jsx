@@ -1,85 +1,113 @@
 import { useEffect, useRef, useState } from 'react'
-import * as NutrientSDK from '@nutrient-sdk/viewer'
 
 function NutrientViewer({ pptxFile, className = '' }) {
   const containerRef = useRef(null)
-  const [instance, setInstance] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [instance, setInstance] = useState(null)
 
   useEffect(() => {
-    let mountedInstance = null
+    let isMounted = true
+    let viewerInstance = null
 
     const loadViewer = async () => {
-      if (!containerRef.current || !pptxFile) return
+      if (!containerRef.current || !pptxFile) {
+        setIsLoading(false)
+        return
+      }
 
       try {
         setIsLoading(true)
         setError(null)
 
-        // Convert file to ArrayBuffer if it's a File object
+        // Add timeout to prevent indefinite loading
+        const timeout = setTimeout(() => {
+          if (isMounted) {
+            setError('Nutrient SDK initialization timed out. This might be due to missing assets or configuration issues.')
+            setIsLoading(false)
+          }
+        }, 10000) // 10 second timeout
+
+        // Dynamic import to handle loading issues
+        const NutrientSDK = await import('@nutrient-sdk/viewer')
+
+        if (!isMounted) return
+
+        clearTimeout(timeout)
+
+        // Convert file to ArrayBuffer if needed
         let documentBuffer
         if (pptxFile instanceof File) {
           documentBuffer = await pptxFile.arrayBuffer()
         } else if (typeof pptxFile === 'string') {
-          // If it's a URL, fetch it
-          const response = await fetch(pptxFile)
-          if (!response.ok) {
-            throw new Error(`Failed to load PPTX file: ${response.status}`)
+          try {
+            const response = await fetch(pptxFile)
+            if (!response.ok) {
+              throw new Error(`Failed to load file: ${response.status}`)
+            }
+            documentBuffer = await response.arrayBuffer()
+          } catch (fetchError) {
+            throw new Error(`Cannot load file from ${pptxFile}. File may not exist or CORS restrictions apply.`)
           }
-          documentBuffer = await response.arrayBuffer()
         } else {
           documentBuffer = pptxFile
         }
 
-        // Configure Nutrient SDK
+        if (!isMounted) return
+
+        // Minimal Nutrient SDK configuration
         const configuration = {
           container: containerRef.current,
           document: documentBuffer,
           baseUrl: '/nutrient-sdk/',
-          // Enable Office document support
-          enableOfficeDocumentSupport: true,
-          // Configure UI to match black/white theme
-          theme: {
-            mode: 'light',
-            colors: {
-              primary: '#000000',
-              secondary: '#ffffff',
-              background: '#ffffff',
-              text: '#000000'
-            }
-          },
-          // Toolbar configuration
+          licenseKey: 'demo', // Use demo license
+          // Disable features that might cause issues
+          disableAnnotations: true,
+          disableTextSelection: false,
+          // Simple toolbar
           toolbarItems: [
-            { type: 'zoom-in' },
             { type: 'zoom-out' },
-            { type: 'zoom-mode' },
+            { type: 'zoom-in' },
             { type: 'spacer' },
             { type: 'previous-page' },
-            { type: 'next-page' },
-            { type: 'spacer' },
-            { type: 'search' },
-            { type: 'spacer' },
-            { type: 'print' }
+            { type: 'next-page' }
           ],
-          // Disable annotations for sanitization focus
-          disableAnnotations: true,
-          // Enable text selection for our sanitization features
-          enableTextSelection: true
+          // Theme settings
+          theme: 'light'
         }
 
-        // Load the document
-        const viewerInstance = await NutrientSDK.load(configuration)
-        mountedInstance = viewerInstance
+        console.log('Initializing Nutrient SDK with config:', configuration)
+
+        // Load the document with error handling
+        viewerInstance = await NutrientSDK.load(configuration)
+
+        if (!isMounted) {
+          viewerInstance?.unload?.()
+          return
+        }
+
         setInstance(viewerInstance)
         setIsLoading(false)
-
-        console.log('Nutrient SDK loaded successfully for PPTX')
+        console.log('Nutrient SDK loaded successfully')
 
       } catch (err) {
-        console.error('Error loading Nutrient SDK:', err)
-        setError(`Failed to load PPTX viewer: ${err.message}`)
-        setIsLoading(false)
+        console.error('Nutrient SDK error:', err)
+        if (isMounted) {
+          let errorMessage = 'Failed to load PowerPoint viewer'
+
+          if (err.message.includes('timeout')) {
+            errorMessage = 'Viewer initialization timed out. Check console for details.'
+          } else if (err.message.includes('CORS')) {
+            errorMessage = 'Cannot access file due to browser security restrictions.'
+          } else if (err.message.includes('assets') || err.message.includes('baseUrl')) {
+            errorMessage = 'Viewer assets not found. Check that /nutrient-sdk/ files are available.'
+          } else {
+            errorMessage = `Error: ${err.message}`
+          }
+
+          setError(errorMessage)
+          setIsLoading(false)
+        }
       }
     }
 
@@ -87,8 +115,9 @@ function NutrientViewer({ pptxFile, className = '' }) {
 
     // Cleanup
     return () => {
-      if (mountedInstance) {
-        mountedInstance.unload()
+      isMounted = false
+      if (viewerInstance) {
+        viewerInstance.unload?.()
           .then(() => console.log('Nutrient SDK unloaded'))
           .catch(err => console.error('Error unloading Nutrient SDK:', err))
       }
@@ -98,7 +127,8 @@ function NutrientViewer({ pptxFile, className = '' }) {
   const handleRetry = () => {
     setError(null)
     setIsLoading(true)
-    // Trigger reload by changing a dependency
+    // Force re-render
+    window.location.reload()
   }
 
   if (error) {
@@ -109,8 +139,30 @@ function NutrientViewer({ pptxFile, className = '' }) {
             <h3>⚠️ Viewer Error</h3>
             <p>{error}</p>
             <button onClick={handleRetry} className="retry-btn">
-              Try Again
+              Reload Page
             </button>
+            <div style={{ marginTop: '16px', fontSize: '0.8em', opacity: '0.7' }}>
+              <p>Troubleshooting:</p>
+              <ul style={{ textAlign: 'left', marginTop: '8px' }}>
+                <li>Check browser console for detailed errors</li>
+                <li>Ensure Nutrient SDK assets are available</li>
+                <li>Try uploading a different PPTX file</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!pptxFile) {
+    return (
+      <div className={`nutrient-viewer ${className}`}>
+        <div className="loading-container">
+          <h3>📁 No File Selected</h3>
+          <p>Upload a PowerPoint presentation to view it here</p>
+          <div style={{ marginTop: '16px', fontSize: '0.8em', opacity: '0.7' }}>
+            <p>Supported format: .pptx files</p>
           </div>
         </div>
       </div>
@@ -123,6 +175,10 @@ function NutrientViewer({ pptxFile, className = '' }) {
         <div className="loading-container">
           <h3>🔄 Loading PPTX Viewer...</h3>
           <p>Initializing Nutrient SDK for PowerPoint presentation</p>
+          <div style={{ marginTop: '16px', fontSize: '0.8em', opacity: '0.7' }}>
+            <p>This may take a moment on first load...</p>
+            <p>File: {pptxFile instanceof File ? pptxFile.name : pptxFile}</p>
+          </div>
         </div>
       </div>
     )

@@ -5,7 +5,7 @@ import StepIndicator from './components/StepIndicator'
 import './App.css'
 
 function App() {
-  const [currentPptxFile, setCurrentPptxFile] = useState('/docs/EMEA PEG training_April 2022.pptx')
+  const [currentPptxFile, setCurrentPptxFile] = useState(null)
   const fileInputRef = useRef(null)
 
   const handleFileUpload = (file) => {
