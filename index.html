@@ -314,6 +314,48 @@
             color: #10b981;
         }
 
+        /* Editable text elements */
+        .editable-text {
+            border-radius: 3px;
+            padding: 2px 4px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .editable-text:hover {
+            background-color: #f3f4f6;
+            outline: 1px dotted #9ca3af;
+        }
+
+        .editable-text.editing {
+            background-color: #dbeafe;
+            outline: 2px solid #3b82f6;
+        }
+
+        /* Content category highlighting */
+        .company-name {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .financial-data {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .confidential-data {
+            background-color: rgba(245, 158, 11, 0.1);
+        }
+
+        .client-name {
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        /* Sanitized content styling */
+        .sanitized {
+            background-color: #fff3cd !important;
+            border: 1px dotted #856404 !important;
+            font-style: italic;
+        }
+
         /* Responsive design */
         @media (max-width: 1024px) {
             .content-area {
@@ -350,11 +392,76 @@
                 <div class="slide-container">
                     <div class="slide-title">Project Bicycle Co | Summary of findings (1/2)</div>
                     <div class="slide-content" id="slideContent">
-                        <!-- Slide content will be loaded here -->
-                        <div style="margin-bottom: 20px;">
-                            <strong>Loading PowerPoint content...</strong>
-                        </div>
-                        <p>Placeholder for slide content from <code>docs/EMEA PEG training_April 2022.pptx</code></p>
+                        <!-- Slide content loaded from EMEA PEG training -->
+                        <table class="slide-table" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th style="border: 1px solid #dee2e6; padding: 12px; text-align: left; font-weight: 600;">Swim Lane</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 12px; text-align: left; font-weight: 600;">Summary</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 12px; text-align: left; font-weight: 600;">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px; font-weight: 500; background-color: #f1f5f9;">
+                                        <span class="editable-text" data-category="general">Conventional performance</span>
+                                    </td>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px;">
+                                        <span class="editable-text" data-category="general">Moderately attractive market</span>
+                                    </td>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px;">
+                                        <div style="margin-bottom: 8px;">
+                                            • <span class="editable-text company-name" data-category="company">Bicycle Co</span> targets the mid-to-premium segment
+                                        </div>
+                                        <div style="margin-bottom: 8px;">
+                                            • TAM of ~<span class="editable-text financial-data" data-category="financial">€4.2B</span>
+                                            (<span class="editable-text financial-data" data-category="financial">3.2% CAGR</span> 2019-2024)
+                                        </div>
+                                        <div>
+                                            • <span class="editable-text financial-data" data-category="financial">8.5%</span> market share (TAM)
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px; font-weight: 500; background-color: #f1f5f9;">
+                                        <span class="editable-text" data-category="general">Market positioning</span>
+                                    </td>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px;">
+                                        <span class="editable-text" data-category="general">Strong competitive position</span>
+                                    </td>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px;">
+                                        <div style="margin-bottom: 8px;">
+                                            • Leading brand recognition in <span class="editable-text confidential-data" data-category="confidential">EMEA region</span>
+                                        </div>
+                                        <div style="margin-bottom: 8px;">
+                                            • Revenue growth of <span class="editable-text financial-data" data-category="financial">€125M</span> in FY2022
+                                        </div>
+                                        <div>
+                                            • <span class="editable-text confidential-data" data-category="confidential">Proprietary technology</span> advantages
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px; font-weight: 500; background-color: #f1f5f9;">
+                                        <span class="editable-text" data-category="general">Client portfolio</span>
+                                    </td>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px;">
+                                        <span class="editable-text" data-category="general">Diversified client base</span>
+                                    </td>
+                                    <td style="border: 1px solid #dee2e6; padding: 12px;">
+                                        <div style="margin-bottom: 8px;">
+                                            • Key clients include <span class="editable-text client-name" data-category="client">MegaCorp Industries</span>
+                                        </div>
+                                        <div style="margin-bottom: 8px;">
+                                            • Partnership with <span class="editable-text client-name" data-category="client">GlobalTech Solutions</span>
+                                        </div>
+                                        <div>
+                                            • <span class="editable-text financial-data" data-category="financial">42%</span> of revenue from top 5 clients
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
