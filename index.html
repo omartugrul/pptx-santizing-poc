@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PE WorkBench PowerPoint Sanitization POC</title>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .top-bar {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .consultant-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .consultant-name {
+            font-weight: 500;
+        }
+
+        .case-code {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .compliance-bot-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .compliance-bot-btn:hover {
+            background-color: #2563eb;
+        }
+
+        /* Main content area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            gap: 1px;
+            overflow: hidden;
+        }
+
+        /* Left panel - Slide viewer */
+        .slide-viewer {
+            flex: 0 0 60%;
+            background-color: white;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .slide-container {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 30px;
+            min-height: 500px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .slide-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .slide-content {
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        /* Right panel - Sanitization controls */
+        .sanitization-panel {
+            flex: 0 0 40%;
+            background-color: #f8f9fa;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        .control-group h3 {
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #374151;
+        }
+
+        .dropdown-container {
+            margin-bottom: 16px;
+        }
+
+        .dropdown {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 0.9em;
+        }
+
+        .number-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .number-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .number-btn {
+            width: 32px;
+            height: 32px;
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .number-btn:hover {
+            background-color: #e5e7eb;
+        }
+
+        /* Form controls */
+        .checkbox-group, .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item, .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input, .radio-item input {
+            margin: 0;
+        }
+
+        .checkbox-item label, .radio-item label {
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        /* Toggle control */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .toggle-label {
+            font-size: 0.9em;
+            color: #374151;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background-color: #d1d5db;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .toggle-switch.active {
+            background-color: #3b82f6;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+        }
+
+        /* Step indicator */
+        .step-indicator {
+            background-color: white;
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+            position: relative;
+        }
+
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            right: -60px;
+            width: 120px;
+            height: 2px;
+            background-color: #e5e7eb;
+            z-index: 1;
+        }
+
+        .step.completed:not(:last-child)::after {
+            background-color: #10b981;
+        }
+
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step.completed .step-icon {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .step.current .step-icon {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .step.pending .step-icon {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .step-label {
+            font-size: 0.8em;
+            text-align: center;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+
+        .step.current .step-label {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .step.completed .step-label {
+            color: #10b981;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .content-area {
+                flex-direction: column;
+            }
+
+            .slide-viewer, .sanitization-panel {
+                flex: none;
+            }
+
+            .slide-viewer {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="top-bar">
+            <div class="consultant-info">
+                <div class="consultant-name">Consultant Name</div>
+                <div class="case-code">Case Code 302823-G</div>
+            </div>
+            <button class="compliance-bot-btn">
+                🤖 Run Compliance Bot
+            </button>
+        </header>
+
+        <!-- Main content -->
+        <main class="content-area">
+            <!-- Left panel: Slide viewer -->
+            <div class="slide-viewer">
+                <div class="slide-container">
+                    <div class="slide-title">Project Bicycle Co | Summary of findings (1/2)</div>
+                    <div class="slide-content" id="slideContent">
+                        <!-- Slide content will be loaded here -->
+                        <div style="margin-bottom: 20px;">
+                            <strong>Loading PowerPoint content...</strong>
+                        </div>
+                        <p>Placeholder for slide content from <code>docs/EMEA PEG training_April 2022.pptx</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right panel: Sanitization controls -->
+            <div class="sanitization-panel">
+                <div class="control-group">
+                    <div class="dropdown-container">
+                        <select class="dropdown">
+                            <option>Choose an option</option>
+                            <option>Full sanitization</option>
+                            <option>Partial sanitization</option>
+                            <option>Custom rules</option>
+                        </select>
+                    </div>
+
+                    <div class="number-input-container">
+                        <button class="number-btn" onclick="adjustNumber(-1)">-</button>
+                        <input type="number" class="number-input" value="1000" id="numberInput">
+                        <button class="number-btn" onclick="adjustNumber(1)">+</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Sanitization Controls</h3>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="scrub-company" checked>
+                            <label for="scrub-company">Scrub Company Names</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="remove-financial" checked>
+                            <label for="remove-financial">Remove Financial Data</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hide-confidential">
+                            <label for="hide-confidential">Hide Confidential Metrics</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="anonymize-clients">
+                            <label for="anonymize-clients">Anonymize Client Names</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Additional Options</h3>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="full-sanitization" name="sanitization-mode">
+                            <label for="full-sanitization">Full Sanitization</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="partial-sanitization" name="sanitization-mode" checked>
+                            <label for="partial-sanitization">Partial Sanitization</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="toggle-container">
+                        <span class="toggle-label">Ready to Export</span>
+                        <div class="toggle-switch active" onclick="toggleSwitch(this)">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Step indicator -->
+        <footer class="step-indicator">
+            <div class="step completed">
+                <div class="step-icon">✓</div>
+                <div class="step-label">Knowledge<br>Capture</div>
+            </div>
+            <div class="step completed">
+                <div class="step-icon">✓</div>
+                <div class="step-label">Document<br>Upload</div>
+            </div>
+            <div class="step completed">
+                <div class="step-icon">✓</div>
+                <div class="step-label">Tagging</div>
+            </div>
+            <div class="step current">
+                <div class="step-icon">4</div>
+                <div class="step-label">Sanitization</div>
+            </div>
+            <div class="step pending">
+                <div class="step-icon">5</div>
+                <div class="step-label">Archiving</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Number input controls
+        function adjustNumber(delta) {
+            const input = document.getElementById('numberInput');
+            const currentValue = parseInt(input.value) || 0;
+            input.value = Math.max(0, currentValue + delta);
+        }
+
+        // Toggle switch
+        function toggleSwitch(element) {
+            element.classList.toggle('active');
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('PowerPoint Sanitization POC initialized');
+        });
+    </script>
+</body>
+</html>
