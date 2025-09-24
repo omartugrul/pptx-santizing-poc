@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PE WorkBench PowerPoint Sanitization POC</title>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -576,29 +577,255 @@
             element.classList.toggle('active');
         }
 
-        // Sanitization rules and state
+        // PPTX Loading and Parsing
+        let currentSlideData = null;
+
+        async function loadPowerPointFile() {
+            try {
+                console.log('Loading PowerPoint file...');
+                const response = await fetch('docs/EMEA PEG training_April 2022.pptx');
+                if (!response.ok) {
+                    throw new Error(`Failed to load file: ${response.status}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const zip = await JSZip.loadAsync(arrayBuffer);
+
+                // Parse the presentation structure
+                const slideData = await parsePresentationSlides(zip);
+                currentSlideData = slideData;
+
+                // Display the first slide
+                if (slideData.slides && slideData.slides.length > 0) {
+                    displaySlide(slideData.slides[0], slideData.title);
+                } else {
+                    throw new Error('No slides found in presentation');
+                }
+
+            } catch (error) {
+                console.error('Error loading PowerPoint file:', error);
+                displayErrorMessage('Failed to load PowerPoint file. Using demo content instead.');
+                // Keep the existing demo content as fallback
+            }
+        }
+
+        async function parsePresentationSlides(zip) {
+            const slideData = {
+                title: 'EMEA PEG Training - April 2022',
+                slides: []
+            };
+
+            try {
+                // Get presentation.xml for metadata
+                const presentationXml = await zip.file('ppt/presentation.xml')?.async('text');
+
+                // Find slide files
+                const slideFiles = Object.keys(zip.files).filter(name =>
+                    name.match(/^ppt\/slides\/slide\d+\.xml$/)
+                );
+
+                console.log(`Found ${slideFiles.length} slides`);
+
+                // Parse each slide
+                for (const slideFile of slideFiles.slice(0, 1)) { // Just parse first slide for demo
+                    const slideXml = await zip.file(slideFile)?.async('text');
+                    if (slideXml) {
+                        const slide = parseSlideContent(slideXml);
+                        slideData.slides.push(slide);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error parsing slides:', error);
+            }
+
+            return slideData;
+        }
+
+        function parseSlideContent(slideXml) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(slideXml, 'text/xml');
+
+            const slide = {
+                title: '',
+                content: []
+            };
+
+            // Extract text content from slide
+            const textElements = xmlDoc.querySelectorAll('a\\:t, t');
+            textElements.forEach((textEl, index) => {
+                const text = textEl.textContent.trim();
+                if (text && text.length > 0) {
+                    // Categorize content based on keywords and position
+                    let category = 'general';
+                    if (text.includes('€') || text.includes('%') || text.includes('CAGR') || text.includes('TAM')) {
+                        category = 'financial';
+                    } else if (text.toLowerCase().includes('bicycle') || text.toLowerCase().includes('company')) {
+                        category = 'company';
+                    } else if (text.toLowerCase().includes('client') || text.toLowerCase().includes('customer')) {
+                        category = 'client';
+                    } else if (text.toLowerCase().includes('confidential') || text.toLowerCase().includes('proprietary')) {
+                        category = 'confidential';
+                    }
+
+                    slide.content.push({
+                        text: text,
+                        category: category,
+                        index: index
+                    });
+                }
+            });
+
+            // Set slide title (usually first or largest text)
+            if (slide.content.length > 0) {
+                slide.title = slide.content[0].text;
+            }
+
+            return slide;
+        }
+
+        function displaySlide(slide, presentationTitle) {
+            console.log('Displaying slide:', slide.title);
+
+            const slideContainer = document.querySelector('.slide-container');
+            const titleElement = slideContainer.querySelector('.slide-title');
+            const contentElement = slideContainer.querySelector('.slide-content');
+
+            // Update title
+            titleElement.textContent = slide.title || presentationTitle;
+
+            // Create content structure
+            let contentHtml = '<div class="parsed-slide-content">';
+
+            if (slide.content && slide.content.length > 0) {
+                // Group content into logical sections
+                contentHtml += '<div class="slide-text-content">';
+
+                slide.content.forEach((item, index) => {
+                    if (index === 0) return; // Skip title as it's already displayed
+
+                    const categoryClass = getCategoryClass(item.category);
+                    contentHtml += `
+                        <div class="content-item" style="margin-bottom: 12px;">
+                            <span class="editable-text ${categoryClass}" data-category="${item.category}">
+                                ${escapeHtml(item.text)}
+                            </span>
+                        </div>
+                    `;
+                });
+
+                contentHtml += '</div>';
+            } else {
+                contentHtml += '<p>No parseable content found in slide.</p>';
+            }
+
+            contentHtml += '</div>';
+            contentElement.innerHTML = contentHtml;
+
+            // Re-initialize click-to-edit for new content
+            setTimeout(() => {
+                enableClickToEdit();
+                showDemoTooltips();
+            }, 100);
+        }
+
+        function getCategoryClass(category) {
+            switch (category) {
+                case 'company': return 'company-name';
+                case 'financial': return 'financial-data';
+                case 'confidential': return 'confidential-data';
+                case 'client': return 'client-name';
+                default: return '';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function displayErrorMessage(message) {
+            const contentElement = document.querySelector('.slide-content');
+            contentElement.innerHTML = `
+                <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                    <strong>⚠️ ${message}</strong>
+                    <p style="margin-top: 8px; font-size: 0.9em;">The demo will continue with sample content.</p>
+                </div>
+            `;
+        }
+
+        // Dynamic sanitization rules and state
         const sanitizationRules = {
             'scrub-company': {
-                targets: ['Bicycle Co'],
+                keywords: ['company', 'bicycle', 'corp', 'inc', 'ltd', 'gmbh'],
                 replacement: '[COMPANY NAME]',
                 originalValues: {}
             },
             'remove-financial': {
-                targets: ['€4.2B', '3.2% CAGR', '8.5%', '€125M', '42%'],
+                keywords: ['€', '$', '£', '%', 'cagr', 'tam', 'revenue', 'profit', 'margin'],
                 replacement: 'XX.X%',
                 originalValues: {}
             },
             'hide-confidential': {
-                targets: ['EMEA region', 'Proprietary technology'],
+                keywords: ['confidential', 'proprietary', 'internal', 'classified', 'sensitive'],
                 replacement: '[REDACTED]',
                 originalValues: {}
             },
             'anonymize-clients': {
-                targets: ['MegaCorp Industries', 'GlobalTech Solutions'],
+                keywords: ['client', 'customer', 'partner', 'solutions', 'industries'],
                 replacement: '[CLIENT]',
                 originalValues: {}
             }
         };
+
+        // Enhanced sanitization function for dynamic content
+        function applySanitization(checkboxId, isEnabled) {
+            const rule = sanitizationRules[checkboxId];
+            if (!rule) return;
+
+            const slideContent = document.getElementById('slideContent');
+            const editableElements = slideContent.querySelectorAll('.editable-text');
+
+            editableElements.forEach(element => {
+                const currentText = element.textContent;
+                const elementId = element.dataset.elementId || `elem_${Math.random().toString(36).substr(2, 9)}`;
+                element.dataset.elementId = elementId;
+
+                if (isEnabled) {
+                    // Check if text matches sanitization criteria
+                    const shouldSanitize = rule.keywords.some(keyword =>
+                        currentText.toLowerCase().includes(keyword.toLowerCase())
+                    ) || element.dataset.category === getCategory(checkboxId);
+
+                    if (shouldSanitize && !element.classList.contains('sanitized')) {
+                        // Store original value
+                        rule.originalValues[elementId] = currentText;
+
+                        // Apply replacement
+                        element.textContent = rule.replacement;
+                        element.classList.add('sanitized');
+                    }
+                } else {
+                    // Remove sanitization - restore original values
+                    if (rule.originalValues[elementId]) {
+                        element.textContent = rule.originalValues[elementId];
+                        element.classList.remove('sanitized');
+                        delete rule.originalValues[elementId];
+                    }
+                }
+            });
+        }
+
+        function getCategory(checkboxId) {
+            switch (checkboxId) {
+                case 'scrub-company': return 'company';
+                case 'remove-financial': return 'financial';
+                case 'hide-confidential': return 'confidential';
+                case 'anonymize-clients': return 'client';
+                default: return 'general';
+            }
+        }
 
         // Click-to-edit functionality
         function enableClickToEdit() {
@@ -660,42 +887,6 @@
             });
         }
 
-        // Sanitization functionality
-        function applySanitization(checkboxId, isEnabled) {
-            const rule = sanitizationRules[checkboxId];
-            if (!rule) return;
-
-            const slideContent = document.getElementById('slideContent');
-            const editableElements = slideContent.querySelectorAll('.editable-text');
-
-            editableElements.forEach(element => {
-                const currentText = element.textContent;
-
-                if (isEnabled) {
-                    // Apply sanitization
-                    rule.targets.forEach(target => {
-                        if (currentText === target) {
-                            // Store original value
-                            rule.originalValues[element.dataset.originalId || Date.now()] = target;
-                            element.dataset.originalId = element.dataset.originalId || Date.now();
-
-                            // Apply replacement
-                            element.textContent = rule.replacement;
-                            element.classList.add('sanitized');
-                        }
-                    });
-                } else {
-                    // Remove sanitization - restore original values
-                    const originalId = element.dataset.originalId;
-                    if (originalId && rule.originalValues[originalId]) {
-                        element.textContent = rule.originalValues[originalId];
-                        element.classList.remove('sanitized');
-                        delete rule.originalValues[originalId];
-                        delete element.dataset.originalId;
-                    }
-                }
-            });
-        }
 
         // Checkbox event handlers
         function initializeSanitizationControls() {
@@ -805,18 +996,27 @@
         }
 
         // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('PowerPoint Sanitization POC initialized');
 
-            // Initialize all functionality
-            enableClickToEdit();
-            initializeSanitizationControls();
+            // Show loading state
+            const contentElement = document.querySelector('.slide-content');
+            contentElement.innerHTML = '<div style="text-align: center; padding: 40px;"><h3>🔄 Loading PowerPoint file...</h3><p>Parsing EMEA PEG training_April 2022.pptx</p></div>';
+
+            // Initialize basic functionality
             enhanceUIControls();
-            showDemoTooltips();
             addErrorHandling();
 
-            // Apply initial sanitization for checked boxes
+            // Load the actual PowerPoint file
+            await loadPowerPointFile();
+
+            // Initialize functionality after content is loaded
             setTimeout(() => {
+                enableClickToEdit();
+                initializeSanitizationControls();
+                showDemoTooltips();
+
+                // Apply initial sanitization for checked boxes
                 const checkedBoxes = document.querySelectorAll('.sanitization-panel input[type="checkbox"]:checked');
                 checkedBoxes.forEach(checkbox => {
                     applySanitization(checkbox.id, true);
@@ -825,7 +1025,7 @@
 
                 // Show initialization complete
                 console.log('✅ All systems ready for demo');
-            }, 100);
+            }, 200);
         });
     </script>
 </body>
