@@ -10,6 +10,7 @@ function App() {
   const [slideData, setSlideData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [currentPptxFile, setCurrentPptxFile] = useState(null)
 
   // Sanitization rules
   const sanitizationRules = {
@@ -128,6 +129,7 @@ function App() {
         if (slideXml) {
           const slide = parseSlideContent(slideXml)
           setSlideData(slide)
+          setCurrentPptxFile(file) // Store the file for Nutrient viewer
         } else {
           throw new Error('Failed to read slide content')
         }
@@ -137,6 +139,7 @@ function App() {
     } catch (err) {
       console.error('Error processing uploaded file:', err)
       setError('Failed to process uploaded PPTX file. Loading demo content instead.')
+      setCurrentPptxFile(null)
       loadDemoContent()
     }
 
@@ -188,6 +191,7 @@ function App() {
           slideData={slideData}
           loading={loading}
           error={error}
+          pptxFile={currentPptxFile}
         />
 
         <SanitizationPanel
