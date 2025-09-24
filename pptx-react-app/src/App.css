@@ -77,149 +77,32 @@ body {
 .content-area {
   flex: 1;
   display: flex;
-  gap: 2px;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
   overflow: hidden;
 }
 
-/* Left panel - Slide viewer */
-.slide-viewer {
-  flex: 0 0 60%;
-  background-color: white;
-  padding: 20px;
-  overflow-y: auto;
-  border-right: 2px solid black;
-}
-
-.view-mode-toggle {
+/* Upload section */
+.upload-section {
   display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  border: 2px solid black;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.toggle-btn {
-  flex: 1;
-  padding: 8px 16px;
-  background-color: white;
-  color: black;
-  border: none;
-  cursor: pointer;
-  font-size: 0.9em;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.toggle-btn:hover {
-  background-color: black;
-  color: white;
-}
-
-.toggle-btn.active {
-  background-color: black;
-  color: white;
-  font-weight: 600;
-}
-
-.toggle-btn:not(:last-child) {
-  border-right: 2px solid black;
-}
-
-.slide-container {
-  background-color: white;
-  border: 2px solid black;
-  border-radius: 8px;
-  padding: 30px;
-  min-height: 500px;
-}
-
-.slide-title {
-  font-size: 1.5em;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: black;
-  border-bottom: 2px solid black;
-  padding-bottom: 10px;
-}
-
-.slide-content {
-  font-size: 0.95em;
-  line-height: 1.6;
-}
-
-.content-item {
-  margin-bottom: 12px;
-  padding: 8px 0;
-}
-
-.error-message {
-  background-color: white;
-  border: 2px solid black;
-  border-radius: 6px;
-  padding: 16px;
-  margin: 20px 0;
-}
-
-.error-message strong {
-  display: block;
-  margin-bottom: 8px;
-}
-
-/* Right panel - Sanitization controls */
-.sanitization-panel {
-  flex: 0 0 40%;
-  background-color: white;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 20px;
-  overflow-y: auto;
-  border-left: 2px solid black;
-}
-
-.control-group {
-  margin-bottom: 24px;
   border: 2px solid black;
   border-radius: 8px;
-  padding: 16px;
-}
-
-.control-group h3 {
-  font-size: 1em;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: black;
-  border-bottom: 1px solid black;
-  padding-bottom: 8px;
-}
-
-.dropdown-container {
-  margin-bottom: 16px;
-}
-
-.dropdown {
-  width: 100%;
-  padding: 8px 12px;
-  border: 2px solid black;
-  border-radius: 6px;
   background-color: white;
-  font-size: 0.9em;
-  color: black;
-}
-
-.file-upload-container {
-  margin-bottom: 16px;
-  padding: 12px;
-  border: 2px dashed black;
-  border-radius: 6px;
-  text-align: center;
 }
 
 .upload-btn {
   background: white;
   border: 2px solid black;
-  padding: 8px 12px;
+  padding: 12px 24px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 1em;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
@@ -229,124 +112,19 @@ body {
 }
 
 .upload-hint {
-  font-size: 0.8em;
+  font-size: 0.9em;
   color: black;
-  margin-top: 4px;
   opacity: 0.7;
 }
 
-.number-input-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.number-input {
+/* Viewer container */
+.viewer-container {
   flex: 1;
-  padding: 8px 12px;
-  border: 2px solid black;
-  border-radius: 6px;
-  text-align: center;
-  background-color: white;
-  color: black;
-}
-
-.number-btn {
-  width: 32px;
-  height: 32px;
   background-color: white;
   border: 2px solid black;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.number-btn:hover {
-  background-color: black;
-  color: white;
-}
-
-/* Form controls */
-.checkbox-group,
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.checkbox-item,
-.radio-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.checkbox-item input,
-.radio-item input {
-  margin: 0;
-  accent-color: black;
-}
-
-.checkbox-item label,
-.radio-item label {
-  font-size: 0.9em;
-  cursor: pointer;
-  color: black;
-  transition: all 0.2s ease;
-}
-
-.checkbox-item label.active {
-  font-weight: 600;
-  color: black;
-}
-
-/* Toggle control */
-.toggle-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.toggle-label {
-  font-size: 0.9em;
-  color: black;
-}
-
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 24px;
-  background-color: white;
-  border: 2px solid black;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.toggle-switch.active {
-  background-color: black;
-}
-
-.toggle-slider {
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 18px;
-  height: 18px;
-  background-color: black;
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-
-.toggle-switch.active .toggle-slider {
-  background-color: white;
-  transform: translateX(24px);
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 600px;
 }
 
 /* Step indicator */
@@ -431,60 +209,20 @@ body {
   opacity: 0.5;
 }
 
-/* Editable text elements */
-.editable-text {
-  border-radius: 3px;
-  padding: 2px 4px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.editable-text:hover {
-  background-color: white;
-  border: 1px solid black;
-}
-
-/* Content category highlighting - using only black/white patterns */
-.company-name {
-  background-color: black;
-  color: white;
-}
-
-.financial-data {
-  background-color: white;
-  color: black;
-  border: 2px solid black;
-}
-
-.confidential-data {
-  background-color: black;
-  color: white;
-  text-decoration: underline;
-}
-
-.client-name {
-  background-color: white;
-  color: black;
-  border: 1px dashed black;
-}
-
-/* Sanitized content styling */
-.sanitized {
-  background-color: white !important;
-  color: black !important;
-  border: 2px dashed black !important;
-  font-style: italic;
-}
-
 /* Nutrient Viewer Styles */
 .nutrient-viewer {
   width: 100%;
   height: 100%;
 }
 
+.main-nutrient-viewer {
+  height: 100%;
+  min-height: 500px;
+}
+
 .nutrient-container {
   background-color: white !important;
+  height: 100%;
 }
 
 .loading-container,
@@ -556,17 +294,16 @@ body {
 /* Responsive design */
 @media (max-width: 1024px) {
   .content-area {
-    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
   }
 
-  .slide-viewer,
-  .sanitization-panel {
-    flex: none;
-    border: none;
-    border-bottom: 2px solid black;
+  .upload-section {
+    padding: 15px;
   }
 
-  .slide-viewer {
+  .viewer-container {
+    padding: 15px;
     min-height: 400px;
   }
 }
