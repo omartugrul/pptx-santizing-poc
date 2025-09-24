@@ -570,9 +570,181 @@
             element.classList.toggle('active');
         }
 
+        // Sanitization rules and state
+        const sanitizationRules = {
+            'scrub-company': {
+                targets: ['Bicycle Co'],
+                replacement: '[COMPANY NAME]',
+                originalValues: {}
+            },
+            'remove-financial': {
+                targets: ['€4.2B', '3.2% CAGR', '8.5%', '€125M', '42%'],
+                replacement: 'XX.X%',
+                originalValues: {}
+            },
+            'hide-confidential': {
+                targets: ['EMEA region', 'Proprietary technology'],
+                replacement: '[REDACTED]',
+                originalValues: {}
+            },
+            'anonymize-clients': {
+                targets: ['MegaCorp Industries', 'GlobalTech Solutions'],
+                replacement: '[CLIENT]',
+                originalValues: {}
+            }
+        };
+
+        // Click-to-edit functionality
+        function enableClickToEdit() {
+            const editableElements = document.querySelectorAll('.editable-text');
+
+            editableElements.forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    if (element.classList.contains('editing')) return;
+
+                    const originalText = element.textContent;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = originalText;
+                    input.className = 'inline-edit-input';
+                    input.style.cssText = `
+                        border: 2px solid #3b82f6;
+                        background: #dbeafe;
+                        padding: 2px 4px;
+                        border-radius: 3px;
+                        font-family: inherit;
+                        font-size: inherit;
+                        width: ${Math.max(100, originalText.length * 8)}px;
+                    `;
+
+                    element.classList.add('editing');
+                    element.innerHTML = '';
+                    element.appendChild(input);
+
+                    input.focus();
+                    input.select();
+
+                    function finishEditing() {
+                        const newText = input.value || originalText;
+                        element.textContent = newText;
+                        element.classList.remove('editing');
+
+                        // Update sanitization rules if the original text was a target
+                        Object.keys(sanitizationRules).forEach(ruleKey => {
+                            const rule = sanitizationRules[ruleKey];
+                            const targetIndex = rule.targets.indexOf(originalText);
+                            if (targetIndex !== -1) {
+                                rule.targets[targetIndex] = newText;
+                            }
+                        });
+                    }
+
+                    input.addEventListener('blur', finishEditing);
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            finishEditing();
+                        } else if (e.key === 'Escape') {
+                            element.textContent = originalText;
+                            element.classList.remove('editing');
+                        }
+                    });
+                });
+            });
+        }
+
+        // Sanitization functionality
+        function applySanitization(checkboxId, isEnabled) {
+            const rule = sanitizationRules[checkboxId];
+            if (!rule) return;
+
+            const slideContent = document.getElementById('slideContent');
+            const editableElements = slideContent.querySelectorAll('.editable-text');
+
+            editableElements.forEach(element => {
+                const currentText = element.textContent;
+
+                if (isEnabled) {
+                    // Apply sanitization
+                    rule.targets.forEach(target => {
+                        if (currentText === target) {
+                            // Store original value
+                            rule.originalValues[element.dataset.originalId || Date.now()] = target;
+                            element.dataset.originalId = element.dataset.originalId || Date.now();
+
+                            // Apply replacement
+                            element.textContent = rule.replacement;
+                            element.classList.add('sanitized');
+                        }
+                    });
+                } else {
+                    // Remove sanitization - restore original values
+                    const originalId = element.dataset.originalId;
+                    if (originalId && rule.originalValues[originalId]) {
+                        element.textContent = rule.originalValues[originalId];
+                        element.classList.remove('sanitized');
+                        delete rule.originalValues[originalId];
+                        delete element.dataset.originalId;
+                    }
+                }
+            });
+        }
+
+        // Checkbox event handlers
+        function initializeSanitizationControls() {
+            const checkboxes = document.querySelectorAll('.sanitization-panel input[type="checkbox"]');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    applySanitization(this.id, this.checked);
+                });
+
+                // Apply initial state if checked
+                if (checkbox.checked) {
+                    applySanitization(checkbox.id, true);
+                }
+            });
+        }
+
+        // Update slide title when company name changes
+        function updateSlideTitle() {
+            const titleElement = document.querySelector('.slide-title');
+            const companyCheckbox = document.getElementById('scrub-company');
+
+            if (companyCheckbox.checked) {
+                titleElement.innerHTML = titleElement.innerHTML.replace(/Bicycle Co/g, '[COMPANY NAME]');
+            } else {
+                titleElement.innerHTML = titleElement.innerHTML.replace(/\[COMPANY NAME\]/g, 'Bicycle Co');
+            }
+        }
+
+        // Enhanced toggle and number controls
+        function enhanceUIControls() {
+            // Update sanitization when company checkbox changes to affect title
+            const companyCheckbox = document.getElementById('scrub-company');
+            if (companyCheckbox) {
+                companyCheckbox.addEventListener('change', updateSlideTitle);
+            }
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log('PowerPoint Sanitization POC initialized');
+
+            // Initialize all functionality
+            enableClickToEdit();
+            initializeSanitizationControls();
+            enhanceUIControls();
+
+            // Apply initial sanitization for checked boxes
+            setTimeout(() => {
+                const checkedBoxes = document.querySelectorAll('.sanitization-panel input[type="checkbox"]:checked');
+                checkedBoxes.forEach(checkbox => {
+                    applySanitization(checkbox.id, true);
+                });
+                updateSlideTitle();
+            }, 100);
         });
     </script>
 </body>
