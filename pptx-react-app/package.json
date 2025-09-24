@@ -12,6 +12,7 @@
   "dependencies": {
     "@nutrient-sdk/viewer": "^1.7.0",
     "jszip": "^3.10.1",
+    "pspdfkit": "^2024.8.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

@@ -226,7 +226,8 @@ body {
 }
 
 .loading-container,
-.error-container {
+.error-container,
+.fallback-container {
   display: flex;
   flex-direction: column;
   align-items: center;
