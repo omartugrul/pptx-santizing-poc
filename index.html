@@ -66,6 +66,12 @@
 
         .compliance-bot-btn:hover {
             background-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .compliance-bot-btn:active {
+            transform: translateY(0);
         }
 
         /* Main content area */
@@ -726,6 +732,76 @@
             if (companyCheckbox) {
                 companyCheckbox.addEventListener('change', updateSlideTitle);
             }
+
+            // Add click handler for compliance bot button
+            const complianceBotBtn = document.querySelector('.compliance-bot-btn');
+            if (complianceBotBtn) {
+                complianceBotBtn.addEventListener('click', function() {
+                    // Simulate running compliance bot
+                    const originalText = this.textContent;
+                    this.textContent = '🔄 Running...';
+                    this.disabled = true;
+
+                    setTimeout(() => {
+                        this.textContent = '✅ Complete';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                            this.disabled = false;
+                        }, 2000);
+                    }, 1500);
+                });
+            }
+
+            // Add visual feedback for checkbox interactions
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const label = this.nextElementSibling;
+                    if (label) {
+                        if (this.checked) {
+                            label.style.fontWeight = '600';
+                            label.style.color = '#059669';
+                        } else {
+                            label.style.fontWeight = '400';
+                            label.style.color = '#374151';
+                        }
+                    }
+                });
+            });
+        }
+
+        // Add demo helper functions
+        function showDemoTooltips() {
+            // Add subtle hints for the demo
+            const editableElements = document.querySelectorAll('.editable-text');
+            let tooltipCounter = 0;
+
+            editableElements.forEach((element, index) => {
+                if (index < 3) { // Show tooltip for first 3 elements
+                    element.title = 'Click to edit this content';
+                }
+            });
+
+            // Add tooltips to checkboxes
+            document.getElementById('scrub-company').title = 'Replaces company names with [COMPANY NAME]';
+            document.getElementById('remove-financial').title = 'Replaces financial data with XX.X%';
+            document.getElementById('hide-confidential').title = 'Hides confidential information with [REDACTED]';
+            document.getElementById('anonymize-clients').title = 'Replaces client names with [CLIENT]';
+        }
+
+        // Performance and error handling
+        function addErrorHandling() {
+            window.addEventListener('error', function(e) {
+                console.error('Application error:', e.error);
+            });
+
+            // Prevent accidental page refresh during demo
+            window.addEventListener('beforeunload', function(e) {
+                if (document.querySelector('.editing')) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved edits. Are you sure you want to leave?';
+                }
+            });
         }
 
         // Initialize the application
@@ -736,6 +812,8 @@
             enableClickToEdit();
             initializeSanitizationControls();
             enhanceUIControls();
+            showDemoTooltips();
+            addErrorHandling();
 
             // Apply initial sanitization for checked boxes
             setTimeout(() => {
@@ -744,6 +822,9 @@
                     applySanitization(checkbox.id, true);
                 });
                 updateSlideTitle();
+
+                // Show initialization complete
+                console.log('✅ All systems ready for demo');
             }, 100);
         });
     </script>
