@@ -1,4 +1,4 @@
-# PE WorkBench PowerPoint Sanitization POC
+# PowerPoint Sanitization POC
 
 A proof of concept demonstrating in-browser PowerPoint slide sanitization with interactive editing controls.
 
